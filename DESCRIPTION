@@ -1,0 +1,21 @@
+Package: targetree
+Type: Package
+Title: Threshold-Focused Classification and Regression Trees
+Version: 0.1.0
+Authors@R: c(
+    person("Lei Bill", "Wang", role = c("aut", "cre"),
+           email = "Bill-Wang-Metrics@users.noreply.github.com"),
+    person("Targetree contributors", role = "ctb")
+    )
+Description: Fits classification and regression trees using standard CART
+    impurity splits, Penalized Final Splits (PFS), or Maximum Distance Final
+    Splits (MDFS). The latter methods focus terminal splits on a user-selected
+    probability threshold. The package also supports categorical predictors,
+    probability-assisted fitting, honest leaf estimation, risk counts, text
+    output, and tree visualization.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.1.0)
+Imports: R6, graphics, grDevices
+URL: https://github.com/Bill-Wang-Metrics/targetree-r
+BugReports: https://github.com/Bill-Wang-Metrics/targetree-r/issues
