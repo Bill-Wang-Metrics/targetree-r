@@ -22,7 +22,9 @@
 #'   \item{`honest_approach(features, target)`}{Replace no splits, but attach
 #'   held-out outcome means to all existing leaves.}
 #'   \item{`print_tree()`}{Print a text representation of the fitted tree.}
-#'   \item{`plot(...)`}{Plot the fitted tree using `plot_cart_tree()`.}
+#'   \item{`plot(figsize = NULL, title = NULL, save_path = NULL,
+#'   font_size = NULL, split_rule_lines = 1, ...)`}{Plot the fitted tree using
+#'   `plot_cart_tree()`.}
 #' }
 #'
 #' @examples
@@ -170,7 +172,8 @@ CART <- R6::R6Class(
       invisible(self)
     },
 
-    plot = function(figsize = NULL, title = NULL, save_path = NULL, ...) {
+    plot = function(figsize = NULL, title = NULL, save_path = NULL,
+                    font_size = NULL, split_rule_lines = 1L, ...) {
       if (is.null(self$tree)) stop("Fit the model before plotting it.", call. = FALSE)
       plot_cart_tree(
         self$tree,
@@ -179,6 +182,8 @@ CART <- R6::R6Class(
         figsize = figsize,
         title = title,
         save_path = save_path,
+        font_size = font_size,
+        split_rule_lines = split_rule_lines,
         ...
       )
       invisible(self)

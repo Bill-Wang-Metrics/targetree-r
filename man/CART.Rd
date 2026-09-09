@@ -40,8 +40,10 @@ positions.
     Attach held-out outcome means to the fitted leaves.
   }
   \item{\code{print_tree()}}{Print the fitted tree.}
-  \item{\code{plot(figsize = NULL, title = NULL, save_path = NULL, ...)}}{
-    Display or save the fitted tree.
+  \item{\code{plot(figsize = NULL, title = NULL, save_path = NULL,
+  font_size = NULL, split_rule_lines = 1, ...)}}{
+    Display or save the fitted tree. When \code{font_size = NULL}, the largest
+    uniform font that fits every node is selected automatically.
   }
 }
 }
@@ -55,4 +57,3 @@ model <- CART$new(depth = 3, minimum_portion = 0.05,
 model$fit(x, y)
 head(model$predict(x))
 }
-

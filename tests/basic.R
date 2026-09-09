@@ -54,6 +54,44 @@ figure <- tempfile(fileext = ".png")
 categorical$plot(save_path = figure)
 stopifnot(file.exists(figure), file.info(figure)$size > 0)
 
+auto_figure <- tempfile(fileext = ".png")
+auto_layout <- plot_cart_tree(
+  categorical$tree,
+  feature_name = categorical$feature_name,
+  cut = categorical$cut,
+  save_path = auto_figure,
+  split_rule_lines = 2
+)
+manual_figure <- tempfile(fileext = ".png")
+manual_layout <- plot_cart_tree(
+  categorical$tree,
+  feature_name = categorical$feature_name,
+  cut = categorical$cut,
+  save_path = manual_figure,
+  font_size = 13,
+  split_rule_lines = 1
+)
+bad_font <- try(
+  plot_cart_tree(categorical$tree, save_path = tempfile(fileext = ".png"),
+                 font_size = 0),
+  silent = TRUE
+)
+bad_lines <- try(
+  plot_cart_tree(categorical$tree, save_path = tempfile(fileext = ".png"),
+                 split_rule_lines = 3),
+  silent = TRUE
+)
+stopifnot(
+  file.exists(auto_figure), file.info(auto_figure)$size > 0,
+  file.exists(manual_figure), file.info(manual_figure)$size > 0,
+  auto_layout$font_size >= 4, auto_layout$font_size <= 24,
+  auto_layout$split_rule_lines == 2L,
+  manual_layout$font_size == 13,
+  manual_layout$split_rule_lines == 1L,
+  inherits(bad_font, "try-error"),
+  inherits(bad_lines, "try-error")
+)
+
 # Deterministic parity fixture generated from the Python reference package.
 n_parity <- 80L
 i <- 0:(n_parity - 1L)

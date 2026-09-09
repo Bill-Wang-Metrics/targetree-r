@@ -67,7 +67,11 @@ targeted <- diabetes_risk > model$cut
 
 model$get_risk(X, y)
 model$print_tree()
-model$plot(title = "MDFS tree", save_path = "diabetes-mdfs.pdf")
+model$plot(
+  title = "MDFS tree",
+  split_rule_lines = 2,
+  save_path = "diabetes-mdfs.pdf"
+)
 ```
 
 `model$predict()` returns the terminal-node probability assigned to every
@@ -110,7 +114,10 @@ diabetes_cart <- CART$new(
 )
 diabetes_cart$fit(X, y)
 diabetes_cart$get_risk(X, y)
-diabetes_cart$plot(title = "CART", save_path = "diabetes-cart.pdf")
+diabetes_cart$plot(
+  title = "CART", split_rule_lines = 2,
+  save_path = "diabetes-cart.pdf"
+)
 
 diabetes_mdfs <- CART$new(
   depth = 3, minimum_portion = 0.02,
@@ -119,7 +126,10 @@ diabetes_mdfs <- CART$new(
 )
 diabetes_mdfs$fit(X, y)
 diabetes_mdfs$get_risk(X, y)
-diabetes_mdfs$plot(title = "MDFS", save_path = "diabetes-mdfs.pdf")
+diabetes_mdfs$plot(
+  title = "MDFS", split_rule_lines = 2,
+  save_path = "diabetes-mdfs.pdf"
+)
 
 diabetes_pfs <- CART$new(
   depth = 3, minimum_portion = 0.02,
@@ -128,8 +138,10 @@ diabetes_pfs <- CART$new(
 )
 diabetes_pfs$fit(X, y)
 diabetes_pfs$get_risk(X, y)
-diabetes_pfs$plot(title = "PFS (lambda = 0.5)",
-                  save_path = "diabetes-pfs.pdf")
+diabetes_pfs$plot(
+  title = "PFS (lambda = 0.5)", split_rule_lines = 2,
+  save_path = "diabetes-pfs.pdf"
+)
 ```
 
 Diabetes CART tree:
@@ -168,7 +180,10 @@ forestfires_cart <- CART$new(
 )
 forestfires_cart$fit(X, y)
 forestfires_cart$get_risk(X, y)
-forestfires_cart$plot(title = "CART", save_path = "forestfires-cart.pdf")
+forestfires_cart$plot(
+  title = "CART", split_rule_lines = 2,
+  save_path = "forestfires-cart.pdf"
+)
 
 forestfires_mdfs <- CART$new(
   depth = 3, minimum_portion = 0.02,
@@ -177,7 +192,10 @@ forestfires_mdfs <- CART$new(
 )
 forestfires_mdfs$fit(X, y)
 forestfires_mdfs$get_risk(X, y)
-forestfires_mdfs$plot(title = "MDFS", save_path = "forestfires-mdfs.pdf")
+forestfires_mdfs$plot(
+  title = "MDFS", split_rule_lines = 2,
+  save_path = "forestfires-mdfs.pdf"
+)
 
 forestfires_pfs <- CART$new(
   depth = 3, minimum_portion = 0.02,
@@ -186,8 +204,10 @@ forestfires_pfs <- CART$new(
 )
 forestfires_pfs$fit(X, y)
 forestfires_pfs$get_risk(X, y)
-forestfires_pfs$plot(title = "PFS (lambda = 0.5)",
-                     save_path = "forestfires-pfs.pdf")
+forestfires_pfs$plot(
+  title = "PFS (lambda = 0.5)", split_rule_lines = 2,
+  save_path = "forestfires-pfs.pdf"
+)
 ```
 
 Forest-fire CART tree:
@@ -241,12 +261,20 @@ categorical_model$fit(X, y)
 
 ```r
 model$print_tree()
-model$plot(title = "MDFS tree")
-model$plot(title = "MDFS tree", save_path = "tree.pdf")
+model$plot(title = "MDFS tree", split_rule_lines = 2)
+model$plot(
+  title = "MDFS tree", save_path = "tree.pdf",
+  font_size = 15, split_rule_lines = 2
+)
 ```
 
 PNG, PDF, and SVG output are supported. When `save_path` is omitted, the tree
-is drawn on the current R graphics device.
+is drawn on the current R graphics device. By default, `font_size = NULL`
+selects the largest uniform font that fits every node box. Supply a positive
+font size in points, such as `font_size = 15`, to override the automatic size.
+Use `split_rule_lines = 1` for a one-line rule such as `Glucose ≤ 127.5`, or
+`split_rule_lines = 2` to place `Glucose` and `≤ 127.5` on separate lines.
+Two-line rules generally allow the automatic font size to be larger.
 
 ## Getting help
 

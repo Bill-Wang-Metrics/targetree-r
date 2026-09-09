@@ -9,6 +9,8 @@ plot_cart_tree(
   figsize = NULL,
   title = NULL,
   save_path = NULL,
+  font_size = NULL,
+  split_rule_lines = 1,
   ...
 )
 }
@@ -19,6 +21,12 @@ plot_cart_tree(
   \item{figsize}{Optional figure size in inches as \code{c(width, height)}.}
   \item{title}{Optional figure title.}
   \item{save_path}{Optional \code{.png}, \code{.pdf}, or \code{.svg} path.}
+  \item{font_size}{Optional positive font size in points for every node label
+  and the legend. The default, \code{NULL}, selects the largest uniform size
+  that fits every node box.}
+  \item{split_rule_lines}{Use \code{1} to display each internal-node rule on
+  one line or \code{2} to put the feature name and condition on separate
+  lines.}
   \item{...}{Additional arguments passed to the graphics device when saving.}
 }
 \value{The computed tree layout, invisibly.}
@@ -32,6 +40,6 @@ x <- matrix(rnorm(200), ncol = 2)
 y <- rbinom(100, 1, plogis(rowSums(x)))
 model <- CART$new(2, 0.05, method = "cart")
 model$fit(x, y)
-plot_cart_tree(model$tree, model$feature_name, model$cut)
+plot_cart_tree(model$tree, model$feature_name, model$cut,
+               split_rule_lines = 2)
 }
-

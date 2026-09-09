@@ -34,13 +34,31 @@
 #' @param title Optional figure title.
 #' @param save_path Optional `.png`, `.pdf`, or `.svg` path. When omitted, the
 #'   current graphics device is used.
+#' @param font_size Optional positive font size in points for every node label
+#'   and the legend. When `NULL`, the largest uniform size that fits every node
+#'   box is selected automatically.
+#' @param split_rule_lines Number of lines for internal-node rules. Use `1` for
+#'   `X <= a` or `2` for the feature name and condition on separate lines.
 #' @param ... Additional arguments passed to the graphics device when saving.
 #'
 #' @return The layout data, invisibly.
 #' @export
 plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
-                           figsize = NULL, title = NULL, save_path = NULL, ...) {
+                           figsize = NULL, title = NULL, save_path = NULL,
+                           font_size = NULL, split_rule_lines = 1L, ...) {
   if (is.null(tree)) stop("`tree` cannot be NULL.", call. = FALSE)
+  if (!is.null(font_size) &&
+      (length(font_size) != 1L || !is.numeric(font_size) ||
+       !is.finite(font_size) || font_size <= 0)) {
+    stop("`font_size` must be a positive number or NULL.", call. = FALSE)
+  }
+  if (length(split_rule_lines) != 1L ||
+      !is.numeric(split_rule_lines) || !is.finite(split_rule_lines) ||
+      !split_rule_lines %in% c(1, 2)) {
+    stop("`split_rule_lines` must be either 1 or 2.", call. = FALSE)
+  }
+  split_rule_lines <- as.integer(split_rule_lines)
+
   layout <- .tree_layout(tree)
   if (is.null(figsize)) {
     figsize <- c(max(layout$leaves * 1.5 + 1.8, 7),
@@ -80,11 +98,80 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
   if (!is.null(title)) graphics::title(main = title, cex.main = 1.05)
 
   node_width <- min(0.82, 0.72 * max(1, layout$leaves / 4))
-  node_height <- 0.46
+  node_height <- 0.55
   blue <- "#5B9BD5"
   white <- "#FFFFFF"
   mu_hat <- "\u03bc\u0302"
   less_equal <- "\u2264"
+  element_of <- "\u2208"
+
+  split_label <- function(node) {
+    name <- if (is.null(feature_name)) {
+      sprintf("X%d", node$feature)
+    } else {
+      feature_name[[node$feature]]
+    }
+    condition <- if (isTRUE(node$categorical)) {
+      sprintf("%s {%s}", element_of,
+              paste(sort(as.character(node$threshold)), collapse = ", "))
+    } else {
+      sprintf("%s %.4f", less_equal, node$threshold)
+    }
+    paste(name, condition, sep = if (split_rule_lines == 1L) " " else "\n")
+  }
+
+  split_labels <- character()
+  leaf_mean_labels <- character()
+  leaf_count_labels <- character()
+  for (entry in layout$nodes) {
+    if (.is_leaf(entry$node)) {
+      leaf_mean_labels <- c(
+        leaf_mean_labels,
+        sprintf("%s = %.4f", mu_hat, entry$node$mean)
+      )
+      leaf_count_labels <- c(
+        leaf_count_labels,
+        sprintf("N = %d", entry$node$n)
+      )
+    } else {
+      split_labels <- c(split_labels, split_label(entry$node))
+    }
+  }
+
+  text_dimensions <- function(label, cex, font = 1) {
+    lines <- strsplit(label, "\n", fixed = TRUE)[[1L]]
+    c(
+      width = max(graphics::strwidth(lines, cex = cex, font = font)),
+      height = sum(graphics::strheight(lines, cex = cex, font = font)) * 1.15
+    )
+  }
+
+  font_fits <- function(points) {
+    cex <- points / graphics::par("ps")
+    split_ok <- all(vapply(split_labels, function(label) {
+      dimensions <- text_dimensions(label, cex)
+      dimensions[["width"]] <= node_width * 0.88 &&
+        dimensions[["height"]] <= node_height * 0.80
+    }, logical(1)))
+    leaf_ok <- all(vapply(seq_along(leaf_mean_labels), function(i) {
+      mean_dimensions <- text_dimensions(leaf_mean_labels[[i]], cex, font = 2)
+      count_dimensions <- text_dimensions(leaf_count_labels[[i]], cex)
+      max(mean_dimensions[["width"]], count_dimensions[["width"]]) <=
+        node_width * 0.88 &&
+        mean_dimensions[["height"]] + count_dimensions[["height"]] <=
+        node_height * 0.72
+    }, logical(1)))
+    split_ok && leaf_ok
+  }
+
+  if (is.null(font_size)) {
+    candidates <- seq(24, 4, by = -0.25)
+    fitting_sizes <- candidates[vapply(candidates, font_fits, logical(1))]
+    resolved_font_size <- if (length(fitting_sizes)) fitting_sizes[[1L]] else 4
+  } else {
+    resolved_font_size <- as.numeric(font_size)
+  }
+  node_cex <- resolved_font_size / graphics::par("ps")
 
   for (entry in layout$nodes) {
     node <- entry$node
@@ -107,28 +194,18 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
                      entry$x + node_width / 2, entry$y + node_height / 2,
                      col = if (positive) blue else white, border = "#444444",
                      lwd = 1.2)
-      graphics::text(entry$x, entry$y + 0.07,
+      graphics::text(entry$x, entry$y + node_height * 0.18,
                      sprintf("%s = %.4f", mu_hat, node$mean),
-                     cex = 0.67, font = 2, col = if (positive) "white" else "#111111")
-      graphics::text(entry$x, entry$y - 0.09,
-                     sprintf("N = %d", node$n), cex = 0.67,
+                     cex = node_cex, font = 2,
+                     col = if (positive) "white" else "#111111")
+      graphics::text(entry$x, entry$y - node_height * 0.18,
+                     sprintf("N = %d", node$n), cex = node_cex,
                      col = if (positive) "white" else "#111111")
     } else {
       graphics::rect(entry$x - node_width / 2, entry$y - node_height / 2,
                      entry$x + node_width / 2, entry$y + node_height / 2,
                      col = "#E6E6E6", border = "#999999")
-      name <- if (is.null(feature_name)) {
-        sprintf("X%d", node$feature)
-      } else {
-        feature_name[[node$feature]]
-      }
-      label <- if (isTRUE(node$categorical)) {
-        sprintf("%s in {%s}", name,
-                paste(sort(as.character(node$threshold)), collapse = ", "))
-      } else {
-        sprintf("%s %s %.4f", name, less_equal, node$threshold)
-      }
-      graphics::text(entry$x, entry$y, label, cex = 0.67)
+      graphics::text(entry$x, entry$y, split_label(node), cex = node_cex)
     }
   }
 
@@ -136,7 +213,9 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
     "topright",
     legend = c(sprintf("%s > %g (targeted)", mu_hat, cut),
                sprintf("%s %s %g (not targeted)", mu_hat, less_equal, cut)),
-    fill = c(blue, white), border = "#444444", cex = 0.7, bg = "white"
+    fill = c(blue, white), border = "#444444", cex = node_cex, bg = "white"
   )
+  layout$font_size <- resolved_font_size
+  layout$split_rule_lines <- split_rule_lines
   invisible(layout)
 }
