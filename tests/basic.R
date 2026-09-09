@@ -70,17 +70,17 @@ stopifnot(
   cart_parity$tree$feature == 1L,
   isTRUE(all.equal(cart_parity$tree$threshold, 0.40625)),
   identical(unname(cart_parity$get_risk(X_parity, y_parity)),
-            c(41L, 1L, 26L, 12L))
+            c(41L, 1L, 30L, 8L))
 )
 
 mdfs_parity <- CART$new(3, 0.09, method = "mdfs", cut = 0.35)
 mdfs_parity$fit(X_parity, y_parity)
 stopifnot(
   isTRUE(all.equal(mdfs_parity$tree$threshold, 0.40625)),
-  isTRUE(all.equal(mdfs_parity$tree$right$left$threshold, 0.84375)),
-  isTRUE(all.equal(mdfs_parity$tree$right$right$threshold, 0.46875)),
+  isTRUE(all.equal(mdfs_parity$tree$right$left$threshold, 0.65625)),
+  isTRUE(all.equal(mdfs_parity$tree$right$right$threshold, 0.65625)),
   identical(unname(mdfs_parity$get_risk(X_parity, y_parity)),
-            c(41L, 1L, 26L, 12L))
+            c(41L, 1L, 30L, 8L))
 )
 
 prob_parity <- CART$new(3, 0.09, method = "pfs", lbd = 0.4, cut = 0.35)
@@ -89,8 +89,8 @@ stopifnot(
   isTRUE(all.equal(prob_parity$tree$threshold, 0.46875)),
   isTRUE(all.equal(
     sort(unique(prob_parity$predict(X_parity))),
-    c(0.11889853588978094, 0.26590779446957746, 0.2949354477132042,
-      0.46002438178327915, 0.6763433101571257)
+    c(0.174033899718177, 0.302655514540545, 0.336355726578437,
+      0.484639676546076, 0.676343310157126)
   ))
 )
 
@@ -111,4 +111,42 @@ stopifnot(
   isTRUE(all.equal(category_parity$tree$threshold, 0.28125)),
   identical(sort(category_parity$tree$right$threshold), c("B", "D")),
   identical(category_parity$predict(X_category_parity), y_category_parity)
+)
+
+# Public example datasets and cross-language regression results.
+data("diabetes", package = "targetree")
+stopifnot(nrow(diabetes) == 768L, ncol(diabetes) == 9L)
+diabetes_x <- diabetes[setdiff(names(diabetes), "Outcome")]
+diabetes_y <- diabetes$Outcome
+
+example_risk <- function(x, y, method, cut, lbd = NULL) {
+  model <- CART$new(
+    depth = 3, minimum_portion = 0.02,
+    method = method, lbd = lbd, cut = cut
+  )
+  model$fit(x, y)
+  unname(model$get_risk(x, y))
+}
+
+stopifnot(
+  identical(example_risk(diabetes_x, diabetes_y, "cart", 0.60),
+            c(150L, 118L, 57L, 443L)),
+  identical(example_risk(diabetes_x, diabetes_y, "mdfs", 0.60),
+            c(160L, 108L, 63L, 437L)),
+  identical(example_risk(diabetes_x, diabetes_y, "pfs", 0.60, 0.5),
+            c(160L, 108L, 63L, 437L))
+)
+
+data("forestfires", package = "targetree")
+forestfires_y <- as.integer(forestfires$area > 5)
+forestfires_x <- forestfires[c(
+  "X", "Y", "FFMC", "DMC", "DC", "ISI", "temp", "RH", "wind", "rain"
+)]
+stopifnot(
+  identical(example_risk(forestfires_x, forestfires_y, "cart", 1 / 3),
+            c(28L, 123L, 14L, 352L)),
+  identical(example_risk(forestfires_x, forestfires_y, "mdfs", 1 / 3),
+            c(53L, 98L, 55L, 311L)),
+  identical(example_risk(forestfires_x, forestfires_y, "pfs", 1 / 3, 0.5),
+            c(49L, 102L, 47L, 319L))
 )

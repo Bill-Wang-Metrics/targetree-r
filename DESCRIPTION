@@ -17,5 +17,6 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
 Imports: R6, graphics, grDevices
+LazyData: true
 URL: https://github.com/Bill-Wang-Metrics/targetree-r
 BugReports: https://github.com/Bill-Wang-Metrics/targetree-r/issues

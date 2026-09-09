@@ -1,102 +1,267 @@
 # targetree for R
 
-Native R implementation of classification and regression trees with **PFS**
-(Penalized Final Split) and **MDFS** (Maximum Distance Final Split), designed
-for threshold-focused binary classification.
-
-This repository ports the functionality of the Python
-[`targetree`](https://github.com/lhy-0594/targetree) package to R. It does not
-require Python.
+`targetree` helps applied researchers construct interpretable targeting rules
+for binary outcomes. It fits classification trees using CART, Penalized Final
+Split (PFS), or Maximum Distance Final Split (MDFS), evaluates the resulting
+targeting policy, and draws tree diagrams for papers and presentations. This
+is a native R package and does not require Python.
 
 ## Installation
 
+Install the package directly from GitHub:
+
 ```r
-# install.packages("remotes")
+install.packages("remotes")  # Run this once if remotes is not installed
 remotes::install_github("Bill-Wang-Metrics/targetree-r")
+```
+
+Then load the package and open its documentation:
+
+```r
+library(targetree)
+help(package = "targetree")
+?CART
+```
+
+To update the package later, run:
+
+```r
+remotes::install_github("Bill-Wang-Metrics/targetree-r", force = TRUE)
 ```
 
 ## Quick start
 
+The package includes the 768-observation diabetes dataset. The following
+example fits an MDFS tree and targets terminal groups whose estimated outcome
+probability exceeds 0.60:
+
 ```r
 library(targetree)
+data("diabetes", package = "targetree")
 
-set.seed(42)
-X <- matrix(rnorm(1000), ncol = 2)
-p <- plogis(rowSums(X))
-y <- rbinom(nrow(X), 1, p)
+predictors <- setdiff(names(diabetes), "Outcome")
+X <- diabetes[predictors]
+y <- diabetes$Outcome
 
 model <- CART$new(
-  depth = 4,
-  minimum_portion = 0.05,
+  depth = 3,
+  minimum_portion = 0.02,
   method = "mdfs",
-  cut = 0.30
+  cut = 0.60,
+  feature_name = predictors
 )
 
 model$fit(X, y)
-predictions <- model$predict(X)
+diabetes_risk <- model$predict(X)
+targeted <- diabetes_risk > model$cut
+
 model$get_risk(X, y)
 model$print_tree()
-model$plot(title = "MDFS tree")
+model$plot(title = "MDFS tree", save_path = "diabetes-mdfs.pdf")
 ```
+
+`model$predict()` returns the terminal-node probability assigned to every
+observation. `model$get_risk()` reports the true-positive, false-negative,
+false-positive, and true-negative counts. The logical vector `targeted`
+indicates which observations belong to terminal groups above `cut`.
+`minimum_portion = 0.02` requires each terminal group to contain at least
+`ceiling(0.02 * nrow(X))` observations from the estimation sample.
 
 ## Methods
 
 | `method` | Default `lbd` | Description |
 |---|---:|---|
-| `"cart"` | 0 | Standard CART impurity splitting |
-| `"pfs"` | 0 | Penalized Final Split with user-selected `lbd` |
-| `"mdfs"` | 1 | Maximum Distance Final Split |
+| `"cart"` | 0 | Standard CART splitting; the targeting threshold is applied after fitting |
+| `"pfs"` | 0 | A threshold-focused final split with a researcher-selected weight, `lbd` |
+| `"mdfs"` | 1 | A fully threshold-focused final split |
+
+For PFS, set `lbd` between 0 and 1. The examples below use `lbd = 0.5`.
+
+## Worked examples
+
+### Diabetes
+
+This example uses `Outcome` as the binary response and the other eight
+variables as predictors. It fits CART, MDFS, and PFS using the same depth,
+minimum-portion setting, and targeting threshold.
+
+```r
+library(targetree)
+data("diabetes", package = "targetree")
+
+predictors <- setdiff(names(diabetes), "Outcome")
+X <- diabetes[predictors]
+y <- diabetes$Outcome
+
+diabetes_cart <- CART$new(
+  depth = 3, minimum_portion = 0.02,
+  method = "cart", cut = 0.60,
+  feature_name = predictors
+)
+diabetes_cart$fit(X, y)
+diabetes_cart$get_risk(X, y)
+diabetes_cart$plot(title = "CART", save_path = "diabetes-cart.pdf")
+
+diabetes_mdfs <- CART$new(
+  depth = 3, minimum_portion = 0.02,
+  method = "mdfs", cut = 0.60,
+  feature_name = predictors
+)
+diabetes_mdfs$fit(X, y)
+diabetes_mdfs$get_risk(X, y)
+diabetes_mdfs$plot(title = "MDFS", save_path = "diabetes-mdfs.pdf")
+
+diabetes_pfs <- CART$new(
+  depth = 3, minimum_portion = 0.02,
+  method = "pfs", lbd = 0.5, cut = 0.60,
+  feature_name = predictors
+)
+diabetes_pfs$fit(X, y)
+diabetes_pfs$get_risk(X, y)
+diabetes_pfs$plot(title = "PFS (lambda = 0.5)",
+                  save_path = "diabetes-pfs.pdf")
+```
+
+### Forest fires
+
+The package also includes the 517-observation forest-fire dataset. Following
+the Python and Stata examples, the binary outcome equals one when the burned
+area exceeds five hectares. The predictors exclude the original `month`,
+`day`, and `area` columns.
+
+```r
+library(targetree)
+data("forestfires", package = "targetree")
+
+y <- as.integer(forestfires$area > 5)
+predictors <- c("X", "Y", "FFMC", "DMC", "DC", "ISI",
+                "temp", "RH", "wind", "rain")
+X <- forestfires[predictors]
+cut <- 1 / 3
+
+forestfires_cart <- CART$new(
+  depth = 3, minimum_portion = 0.02,
+  method = "cart", cut = cut,
+  feature_name = predictors
+)
+forestfires_cart$fit(X, y)
+forestfires_cart$get_risk(X, y)
+forestfires_cart$plot(title = "CART", save_path = "forestfires-cart.pdf")
+
+forestfires_mdfs <- CART$new(
+  depth = 3, minimum_portion = 0.02,
+  method = "mdfs", cut = cut,
+  feature_name = predictors
+)
+forestfires_mdfs$fit(X, y)
+forestfires_mdfs$get_risk(X, y)
+forestfires_mdfs$plot(title = "MDFS", save_path = "forestfires-mdfs.pdf")
+
+forestfires_pfs <- CART$new(
+  depth = 3, minimum_portion = 0.02,
+  method = "pfs", lbd = 0.5, cut = cut,
+  feature_name = predictors
+)
+forestfires_pfs$fit(X, y)
+forestfires_pfs$get_risk(X, y)
+forestfires_pfs$plot(title = "PFS (lambda = 0.5)",
+                     save_path = "forestfires-pfs.pdf")
+```
+
+The confusion-matrix counts reproduce the Python and Stata reference
+implementations:
+
+| Dataset | Method | TP | FN | FP | TN |
+|---|---|---:|---:|---:|---:|
+| Diabetes | CART | 150 | 118 | 57 | 443 |
+| Diabetes | MDFS | 160 | 108 | 63 | 437 |
+| Diabetes | PFS (`lbd = 0.5`) | 160 | 108 | 63 | 437 |
+| Forest fires | CART | 28 | 123 | 14 | 352 |
+| Forest fires | MDFS | 53 | 98 | 55 | 311 |
+| Forest fires | PFS (`lbd = 0.5`) | 49 | 102 | 47 | 319 |
 
 ## Categorical predictors
 
-Supply a data frame and identify categorical columns by name or by R's
-one-based positions:
+Supply a data frame and identify categorical predictors by column name or by
+R's one-based column position. For example, the included forest-fire data also
+contain `month` and `day`:
 
 ```r
-dat <- data.frame(
-  size = rnorm(300),
-  region = sample(c("A", "B", "C"), 300, replace = TRUE)
-)
+data("forestfires", package = "targetree")
 
-model <- CART$new(
+y <- as.integer(forestfires$area > 5)
+predictors <- setdiff(names(forestfires), "area")
+X <- forestfires[predictors]
+
+categorical_model <- CART$new(
   depth = 3,
-  minimum_portion = 0.05,
+  minimum_portion = 0.02,
   method = "mdfs",
-  categorical_features = "region"
+  cut = 1 / 3,
+  categorical_features = c("month", "day")
 )
-model$fit(dat, rbinom(300, 1, 0.2))
+categorical_model$fit(X, y)
 ```
 
 ## Probability-assisted fitting
 
+An optional vector of externally estimated probabilities can be supplied to
+`fit()`:
+
 ```r
-model$fit(X, y, prob = p)
+data("diabetes", package = "targetree")
+predictors <- setdiff(names(diabetes), "Outcome")
+X <- diabetes[predictors]
+y <- diabetes$Outcome
+
+logit_model <- glm(Outcome ~ ., data = diabetes, family = binomial())
+estimated_probabilities <- predict(logit_model, type = "response")
+
+probability_model <- CART$new(
+  depth = 3, minimum_portion = 0.02,
+  method = "pfs", lbd = 0.5, cut = 0.60
+)
+probability_model$fit(X, y, prob = estimated_probabilities)
 ```
 
-When `prob` is provided, ordinary splits and terminal estimates use the
+When `prob` is supplied, ordinary splits and terminal estimates use those
 continuous probabilities while final PFS/MDFS split selection follows the
 observed binary outcome, matching the Python reference implementation.
 
 ## Honest estimation
 
 ```r
-model$fit(X[1:300, ], y[1:300])
-model$honest_approach(X[301:500, ], y[301:500])
-honest_predictions <- model$predict(X, honest = TRUE)
+data("diabetes", package = "targetree")
+predictors <- setdiff(names(diabetes), "Outcome")
+X <- diabetes[predictors]
+y <- diabetes$Outcome
+
+training_rows <- 1:384
+honest_rows <- 385:576
+test_rows <- 577:768
+
+honest_model <- CART$new(
+  depth = 3, minimum_portion = 0.02,
+  method = "mdfs", cut = 0.60
+)
+honest_model$fit(X[training_rows, ], y[training_rows])
+honest_model$honest_approach(X[honest_rows, ], y[honest_rows])
+honest_predictions <- honest_model$predict(X[test_rows, ], honest = TRUE)
 ```
 
-## Save a tree figure
+## Tree output
 
 ```r
-model$plot(save_path = "tree.png")
+model$print_tree()
+model$plot(title = "MDFS tree")
+model$plot(title = "MDFS tree", save_path = "tree.pdf")
 ```
 
-PNG, PDF, and SVG output are supported.
+PNG, PDF, and SVG output are supported. When `save_path` is omitted, the tree
+is drawn on the current R graphics device.
 
-## Development
+## Getting help
 
-```r
-R CMD build .
-R CMD check targetree_0.1.0.tar.gz
-```
-
+Use `?CART` and `?plot_cart_tree` for the complete function documentation.
+Questions and bug reports can be submitted through the repository's
+[Issues page](https://github.com/Bill-Wang-Metrics/targetree-r/issues).

@@ -97,8 +97,7 @@ CART <- R6::R6Class(
         .validate_vector(prob, n, "prob", probability = TRUE)
 
       private$total <- n
-      private$min_samples <- as.integer(self$minimum_portion * n)
-      private$mmin_samples <- as.integer(self$minimum_portion * n / 3)
+      private$min_samples <- max(1L, as.integer(ceiling(self$minimum_portion * n)))
 
       self$tree <- if (is.null(p)) {
         private$grow(x, y, 0L)
@@ -192,7 +191,6 @@ CART <- R6::R6Class(
     feature_columns = NULL,
     total = NULL,
     min_samples = NULL,
-    mmin_samples = NULL,
 
     prepare_features = function(features, fitting) {
       if (is.null(dim(features)) || length(dim(features)) != 2L) {
@@ -258,25 +256,23 @@ CART <- R6::R6Class(
     },
 
     candidate_index = function(objective, left_count, n) {
-      if (length(objective) <= 10L) return(which.min(objective))
+      right_count <- n - left_count
+      candidates <- which(
+        left_count >= private$min_samples &
+          right_count >= private$min_samples
+      )
+      if (!length(candidates)) return(NA_integer_)
 
-      lower <- as.integer(0.1 * n)
-      upper <- as.integer(0.9 * n)
-      largest0 <- 0L
-      smallest0 <- NA_integer_
-      for (i0 in seq_along(left_count) - 1L) {
-        value <- left_count[[i0 + 1L]]
-        if (value <= lower) {
-          largest0 <- i0
-        } else if (value >= upper && is.na(smallest0)) {
-          smallest0 <- i0
-        }
+      # Preserve the reference implementation's preference for 10%--90%
+      # splits when that window contains a feasible candidate.
+      if (length(objective) > 10L) {
+        balanced <- candidates[
+          left_count[candidates] >= as.integer(0.1 * n) &
+            left_count[candidates] <= as.integer(0.9 * n)
+        ]
+        if (length(balanced)) candidates <- balanced
       }
 
-      start <- largest0 + 1L
-      finish <- if (is.na(smallest0)) length(objective) else smallest0
-      candidates <- if (start <= finish) seq.int(start, finish) else integer()
-      if (!length(candidates)) return(which.min(objective))
       candidates[[which.min(objective[candidates])]]
     },
 
@@ -305,6 +301,7 @@ CART <- R6::R6Class(
       right_var <- (sum_y2 - z$left_sq) / rc - ((sum_y - z$left_sum) / rc)^2
       objective <- (left_var * lc + right_var * rc) * 2
       index <- private$candidate_index(objective, lc, n)
+      if (is.na(index)) return(NULL)
       position <- lc[[index]]
       list(
         threshold = (z$xs[[position]] + z$xs[[position + 1L]]) / 2,
@@ -334,6 +331,7 @@ CART <- R6::R6Class(
       right_var <- (sum_y2 - lsq) / rc - ((sum_y - ls) / rc)^2
       objective <- (left_var * lc + right_var * rc) * 2
       index <- private$candidate_index(objective, lc, n)
+      if (is.na(index)) return(NULL)
       list(
         threshold = categories[category_order[seq_len(index)]],
         impurity = objective[[index]],
@@ -367,10 +365,32 @@ CART <- R6::R6Class(
     best_final_split = function(x, y, categorical) {
       if (categorical) {
         categories <- sort(unique(x))
+        if (length(categories) == 1L) return(NULL)
         group <- match(x, categories)
-        counts <- tabulate(group, nbins = length(categories))
-        totals <- as.numeric(rowsum(y, group, reorder = TRUE))
-        return(categories[(totals / counts) > self$cut])
+        x_count <- tabulate(group, nbins = length(categories))
+        y_count <- as.numeric(rowsum(y, group, reorder = TRUE))
+        y2_count <- as.numeric(rowsum(y^2, group, reorder = TRUE))
+        category_order <- order(y_count / x_count)
+
+        x_count <- x_count[category_order]
+        y_count <- y_count[category_order]
+        y2_count <- y2_count[category_order]
+        lc <- head(cumsum(x_count), -1L)
+        ls <- head(cumsum(y_count), -1L)
+        lsq <- head(cumsum(y2_count), -1L)
+        rc <- length(y) - lc
+        left_probability <- lsq / lc
+        right_probability <- (sum(y2_count) - lsq) / rc
+        objective <- (
+          (left_probability - (ls / lc)^2) * lc +
+            (right_probability - ((sum(y_count) - ls) / rc)^2) * rc
+        ) * (1 - self$lbd) + (
+          -abs(self$cut - left_probability) * lc -
+            abs(self$cut - right_probability) * rc
+        ) * self$lbd
+        index <- private$candidate_index(objective, lc, length(y))
+        if (is.na(index)) return(NULL)
+        return(categories[category_order[seq_len(index)]])
       }
 
       z <- private$numerical_candidates(x, y)
@@ -387,25 +407,25 @@ CART <- R6::R6Class(
           abs(self$cut - right_probability) * rc
       ) * self$lbd
       index <- private$candidate_index(objective, lc, length(y))
+      if (is.na(index)) return(NULL)
       position <- lc[[index]]
       (z$xs[[position]] + z$xs[[position + 1L]]) / 2
     },
 
     grow = function(x, y, depth) {
       if (depth == self$depth || length(unique(y)) == 1L ||
-          length(y) < private$min_samples) {
+          length(y) < 2L * private$min_samples) {
         return(.make_leaf(y))
       }
       split <- private$best_split(x, y)
       if (is.null(split)) return(.make_leaf(y))
       mask <- private$split_mask(x, split$feature, split$threshold,
                                  split$categorical)
-      if (min(sum(mask$left), sum(mask$right)) < private$mmin_samples) {
+      if (min(sum(mask$left), sum(mask$right)) < private$min_samples) {
         return(.make_leaf(y))
       }
 
-      at_leaf <- depth == self$depth - 1L ||
-        min(sum(mask$left), sum(mask$right)) < private$min_samples
+      at_leaf <- depth == self$depth - 1L
       if (at_leaf && self$method != "cart") {
         threshold <- private$best_final_split(
           x[[split$feature]], y, private$is_categorical[[split$feature]]
@@ -414,7 +434,7 @@ CART <- R6::R6Class(
         mask <- private$split_mask(
           x, split$feature, threshold, private$is_categorical[[split$feature]]
         )
-        if (min(sum(mask$left), sum(mask$right)) < private$mmin_samples) {
+        if (min(sum(mask$left), sum(mask$right)) < private$min_samples) {
           return(.make_leaf(y))
         }
         return(list(
@@ -435,19 +455,18 @@ CART <- R6::R6Class(
 
     grow_with_prob = function(x, y, p, depth) {
       if (depth == self$depth || min(p) > self$cut || max(p) < self$cut ||
-          length(y) < private$min_samples) {
+          length(y) < 2L * private$min_samples) {
         return(.make_leaf(p))
       }
       split <- private$best_split(x, p)
       if (is.null(split)) return(.make_leaf(p))
       mask <- private$split_mask(x, split$feature, split$threshold,
                                  split$categorical)
-      if (min(sum(mask$left), sum(mask$right)) < private$mmin_samples) {
+      if (min(sum(mask$left), sum(mask$right)) < private$min_samples) {
         return(.make_leaf(p))
       }
 
-      at_leaf <- depth == self$depth - 1L ||
-        min(sum(mask$left), sum(mask$right)) < private$min_samples
+      at_leaf <- depth == self$depth - 1L
       if (at_leaf && self$method != "cart") {
         threshold <- private$best_final_split(
           x[[split$feature]], y, private$is_categorical[[split$feature]]
@@ -456,7 +475,7 @@ CART <- R6::R6Class(
         mask <- private$split_mask(
           x, split$feature, threshold, private$is_categorical[[split$feature]]
         )
-        if (min(sum(mask$left), sum(mask$right)) < private$mmin_samples) {
+        if (min(sum(mask$left), sum(mask$right)) < private$min_samples) {
           return(.make_leaf(p))
         }
         return(list(

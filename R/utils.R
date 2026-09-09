@@ -33,7 +33,10 @@ find_elements <- function(v, a, b) {
 }
 
 .make_leaf <- function(values) {
-  list(type = "leaf", mean = mean(values), n = length(values))
+  # Use the same sum-over-count calculation as the Python reference. R's
+  # two-pass mean() can differ by one floating-point unit at an exact policy
+  # threshold (for example, 4 / 12 versus 1 / 3), changing the target label.
+  list(type = "leaf", mean = sum(values) / length(values), n = length(values))
 }
 
 .validate_vector <- function(x, n, name, probability = FALSE) {
@@ -50,4 +53,3 @@ find_elements <- function(v, a, b) {
   }
   x
 }
-
