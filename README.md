@@ -29,6 +29,16 @@ To update the package later, run:
 remotes::install_github("Bill-Wang-Metrics/targetree-r", force = TRUE)
 ```
 
+## What targetree produces
+
+`targetree` turns a fitted classification tree into an interpretable targeting
+policy. Internal nodes display the splitting rules. Terminal nodes report the
+estimated outcome probability, $\hat{\mu}$, and subgroup size, $N$. Blue terminal
+nodes are targeted because their estimated probabilities exceed the selected
+policy threshold; white terminal nodes are not targeted.
+
+![MDFS targeting tree for the diabetes example](examples/figures/diabetes-mdfs.png)
+
 ## Quick start
 
 The package includes the 768-observation diabetes dataset. The following
@@ -122,6 +132,18 @@ diabetes_pfs$plot(title = "PFS (lambda = 0.5)",
                   save_path = "diabetes-pfs.pdf")
 ```
 
+Diabetes CART tree:
+
+![CART targeting tree for the diabetes example](examples/figures/diabetes-cart.png)
+
+Diabetes MDFS tree:
+
+![MDFS targeting tree for the diabetes example](examples/figures/diabetes-mdfs.png)
+
+Diabetes PFS tree (`lbd = 0.5`):
+
+![PFS targeting tree for the diabetes example](examples/figures/diabetes-pfs.png)
+
 ### Forest fires
 
 The package also includes the 517-observation forest-fire dataset. Following
@@ -167,6 +189,18 @@ forestfires_pfs$get_risk(X, y)
 forestfires_pfs$plot(title = "PFS (lambda = 0.5)",
                      save_path = "forestfires-pfs.pdf")
 ```
+
+Forest-fire CART tree:
+
+![CART targeting tree for the forest-fire example](examples/figures/forestfires-cart.png)
+
+Forest-fire MDFS tree:
+
+![MDFS targeting tree for the forest-fire example](examples/figures/forestfires-mdfs.png)
+
+Forest-fire PFS tree (`lbd = 0.5`):
+
+![PFS targeting tree for the forest-fire example](examples/figures/forestfires-pfs.png)
 
 The confusion-matrix counts reproduce the Python and Stata reference
 implementations:

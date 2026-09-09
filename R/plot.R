@@ -65,10 +65,11 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
     }
     opened_device <- TRUE
   }
-  if (opened_device) on.exit(grDevices::dev.off(), add = TRUE)
-
   old_par <- graphics::par(no.readonly = TRUE)
-  on.exit(graphics::par(old_par), add = TRUE)
+  on.exit({
+    graphics::par(old_par)
+    if (opened_device) grDevices::dev.off()
+  }, add = TRUE)
   graphics::par(mar = c(0.5, 0.5, if (is.null(title)) 0.5 else 2.3, 0.5), xpd = NA)
   graphics::plot.new()
   graphics::plot.window(
@@ -82,6 +83,8 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
   node_height <- 0.46
   blue <- "#5B9BD5"
   white <- "#FFFFFF"
+  mu_hat <- "\u03bc\u0302"
+  less_equal <- "\u2264"
 
   for (entry in layout$nodes) {
     node <- entry$node
@@ -105,10 +108,10 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
                      col = if (positive) blue else white, border = "#444444",
                      lwd = 1.2)
       graphics::text(entry$x, entry$y + 0.07,
-                     sprintf("P(Y=1|X) = %.4f", node$mean),
+                     sprintf("%s = %.4f", mu_hat, node$mean),
                      cex = 0.67, font = 2, col = if (positive) "white" else "#111111")
       graphics::text(entry$x, entry$y - 0.09,
-                     sprintf("samples = %d", node$n), cex = 0.67,
+                     sprintf("N = %d", node$n), cex = 0.67,
                      col = if (positive) "white" else "#111111")
     } else {
       graphics::rect(entry$x - node_width / 2, entry$y - node_height / 2,
@@ -123,7 +126,7 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
         sprintf("%s in {%s}", name,
                 paste(sort(as.character(node$threshold)), collapse = ", "))
       } else {
-        sprintf("%s <= %.4f", name, node$threshold)
+        sprintf("%s %s %.4f", name, less_equal, node$threshold)
       }
       graphics::text(entry$x, entry$y, label, cex = 0.67)
     }
@@ -131,10 +134,9 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
 
   graphics::legend(
     "topright",
-    legend = c(sprintf("P(Y=1|X) > %g (positive)", cut),
-               sprintf("P(Y=1|X) <= %g (negative)", cut)),
+    legend = c(sprintf("%s > %g (targeted)", mu_hat, cut),
+               sprintf("%s %s %g (not targeted)", mu_hat, less_equal, cut)),
     fill = c(blue, white), border = "#444444", cex = 0.7, bg = "white"
   )
   invisible(layout)
 }
-
