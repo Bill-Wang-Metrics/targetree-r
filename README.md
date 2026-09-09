@@ -203,52 +203,6 @@ categorical_model <- CART$new(
 categorical_model$fit(X, y)
 ```
 
-## Probability-assisted fitting
-
-An optional vector of externally estimated probabilities can be supplied to
-`fit()`:
-
-```r
-data("diabetes", package = "targetree")
-predictors <- setdiff(names(diabetes), "Outcome")
-X <- diabetes[predictors]
-y <- diabetes$Outcome
-
-logit_model <- glm(Outcome ~ ., data = diabetes, family = binomial())
-estimated_probabilities <- predict(logit_model, type = "response")
-
-probability_model <- CART$new(
-  depth = 3, minimum_portion = 0.02,
-  method = "pfs", lbd = 0.5, cut = 0.60
-)
-probability_model$fit(X, y, prob = estimated_probabilities)
-```
-
-When `prob` is supplied, ordinary splits and terminal estimates use those
-continuous probabilities while final PFS/MDFS split selection follows the
-observed binary outcome, matching the Python reference implementation.
-
-## Honest estimation
-
-```r
-data("diabetes", package = "targetree")
-predictors <- setdiff(names(diabetes), "Outcome")
-X <- diabetes[predictors]
-y <- diabetes$Outcome
-
-training_rows <- 1:384
-honest_rows <- 385:576
-test_rows <- 577:768
-
-honest_model <- CART$new(
-  depth = 3, minimum_portion = 0.02,
-  method = "mdfs", cut = 0.60
-)
-honest_model$fit(X[training_rows, ], y[training_rows])
-honest_model$honest_approach(X[honest_rows, ], y[honest_rows])
-honest_predictions <- honest_model$predict(X[test_rows, ], honest = TRUE)
-```
-
 ## Tree output
 
 ```r
