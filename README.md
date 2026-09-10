@@ -278,7 +278,9 @@ Two-line rules generally allow the automatic font size to be larger. The title
 is slightly larger than the node text by default; set `title_font_size` to a
 positive point size, such as `title_font_size = 18`, to control it directly.
 Terminal-node means and legend labels use mathematical typesetting for
-`hat(mu)`, so the accent is centered over the Greek letter.
+`hat(mu)`, so the accent is centered over the Greek letter. Numeric split rules
+also use mathematical typesetting, ensuring that `<=` renders as a true `≤` in
+PNG, PDF, and SVG output without font-encoding warnings.
 
 ## Getting help
 

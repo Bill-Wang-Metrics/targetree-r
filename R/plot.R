@@ -107,8 +107,6 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
   node_height <- 0.55
   blue <- "#5B9BD5"
   white <- "#FFFFFF"
-  less_equal <- "\u2264"
-  element_of <- "\u2208"
 
   mean_label <- function(value) {
     as.expression(bquote(hat(mu) == .(sprintf("%.4f", value))))
@@ -125,16 +123,27 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
     } else {
       feature_name[[node$feature]]
     }
-    condition <- if (isTRUE(node$categorical)) {
-      sprintf("%s {%s}", element_of,
-              paste(sort(as.character(node$threshold)), collapse = ", "))
+    if (isTRUE(node$categorical)) {
+      values <- sprintf(
+        "{%s}",
+        paste(sort(as.character(node$threshold)), collapse = ", ")
+      )
+      if (split_rule_lines == 1L) {
+        as.expression(bquote(.(name) %in% .(values)))
+      } else {
+        as.expression(bquote(atop(.(name), "" %in% .(values))))
+      }
     } else {
-      sprintf("%s %.4f", less_equal, node$threshold)
+      threshold <- sprintf("%.4f", node$threshold)
+      if (split_rule_lines == 1L) {
+        as.expression(bquote(.(name) <= .(threshold)))
+      } else {
+        as.expression(bquote(atop(.(name), "" <= .(threshold))))
+      }
     }
-    paste(name, condition, sep = if (split_rule_lines == 1L) " " else "\n")
   }
 
-  split_labels <- character()
+  split_labels <- list()
   leaf_mean_labels <- list()
   leaf_count_labels <- character()
   for (entry in layout$nodes) {
@@ -146,7 +155,7 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
         sprintf("N = %d", entry$node$n)
       )
     } else {
-      split_labels <- c(split_labels, split_label(entry$node))
+      split_labels[[length(split_labels) + 1L]] <- split_label(entry$node)
     }
   }
 

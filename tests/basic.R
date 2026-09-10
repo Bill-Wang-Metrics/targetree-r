@@ -88,9 +88,26 @@ bad_title_font <- try(
                  title_font_size = 0),
   silent = TRUE
 )
+pdf_figure <- tempfile(fileext = ".pdf")
+plot_warnings <- character()
+withCallingHandlers(
+  plot_cart_tree(
+    categorical$tree,
+    feature_name = categorical$feature_name,
+    cut = categorical$cut,
+    save_path = pdf_figure,
+    split_rule_lines = 2
+  ),
+  warning = function(warning) {
+    plot_warnings <<- c(plot_warnings, conditionMessage(warning))
+    invokeRestart("muffleWarning")
+  }
+)
 stopifnot(
   file.exists(auto_figure), file.info(auto_figure)$size > 0,
   file.exists(manual_figure), file.info(manual_figure)$size > 0,
+  file.exists(pdf_figure), file.info(pdf_figure)$size > 0,
+  length(plot_warnings) == 0L,
   auto_layout$font_size >= 4, auto_layout$font_size <= 24,
   auto_layout$title_font_size > auto_layout$font_size,
   auto_layout$split_rule_lines == 2L,
