@@ -264,7 +264,7 @@ model$print_tree()
 model$plot(title = "MDFS tree", split_rule_lines = 2)
 model$plot(
   title = "MDFS tree", save_path = "tree.pdf",
-  font_size = 15, split_rule_lines = 2
+  font_size = 15, split_rule_lines = 2, title_font_size = 18
 )
 ```
 
@@ -274,7 +274,11 @@ selects the largest uniform font that fits every node box. Supply a positive
 font size in points, such as `font_size = 15`, to override the automatic size.
 Use `split_rule_lines = 1` for a one-line rule such as `Glucose ≤ 127.5`, or
 `split_rule_lines = 2` to place `Glucose` and `≤ 127.5` on separate lines.
-Two-line rules generally allow the automatic font size to be larger.
+Two-line rules generally allow the automatic font size to be larger. The title
+is slightly larger than the node text by default; set `title_font_size` to a
+positive point size, such as `title_font_size = 18`, to control it directly.
+Terminal-node means and legend labels use mathematical typesetting for
+`hat(mu)`, so the accent is centered over the Greek letter.
 
 ## Getting help
 

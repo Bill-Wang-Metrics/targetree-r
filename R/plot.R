@@ -39,13 +39,16 @@
 #'   box is selected automatically.
 #' @param split_rule_lines Number of lines for internal-node rules. Use `1` for
 #'   `X <= a` or `2` for the feature name and condition on separate lines.
+#' @param title_font_size Optional positive title font size in points. When
+#'   `NULL`, the title is made slightly larger than the resolved node font.
 #' @param ... Additional arguments passed to the graphics device when saving.
 #'
 #' @return The layout data, invisibly.
 #' @export
 plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
                            figsize = NULL, title = NULL, save_path = NULL,
-                           font_size = NULL, split_rule_lines = 1L, ...) {
+                           font_size = NULL, split_rule_lines = 1L,
+                           title_font_size = NULL, ...) {
   if (is.null(tree)) stop("`tree` cannot be NULL.", call. = FALSE)
   if (!is.null(font_size) &&
       (length(font_size) != 1L || !is.numeric(font_size) ||
@@ -56,6 +59,11 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
       !is.numeric(split_rule_lines) || !is.finite(split_rule_lines) ||
       !split_rule_lines %in% c(1, 2)) {
     stop("`split_rule_lines` must be either 1 or 2.", call. = FALSE)
+  }
+  if (!is.null(title_font_size) &&
+      (length(title_font_size) != 1L || !is.numeric(title_font_size) ||
+       !is.finite(title_font_size) || title_font_size <= 0)) {
+    stop("`title_font_size` must be a positive number or NULL.", call. = FALSE)
   }
   split_rule_lines <- as.integer(split_rule_lines)
 
@@ -95,15 +103,21 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
     ylim = c(-layout$depth - 0.8, 0.8),
     asp = NA
   )
-  if (!is.null(title)) graphics::title(main = title, cex.main = 1.05)
-
   node_width <- min(0.82, 0.72 * max(1, layout$leaves / 4))
   node_height <- 0.55
   blue <- "#5B9BD5"
   white <- "#FFFFFF"
-  mu_hat <- "\u03bc\u0302"
   less_equal <- "\u2264"
   element_of <- "\u2208"
+
+  mean_label <- function(value) {
+    as.expression(bquote(hat(mu) == .(sprintf("%.4f", value))))
+  }
+
+  legend_labels <- as.expression(list(
+    bquote(hat(mu) > .(format(cut, trim = TRUE)) ~ "(targeted)"),
+    bquote(hat(mu) <= .(format(cut, trim = TRUE)) ~ "(not targeted)")
+  ))
 
   split_label <- function(node) {
     name <- if (is.null(feature_name)) {
@@ -121,14 +135,12 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
   }
 
   split_labels <- character()
-  leaf_mean_labels <- character()
+  leaf_mean_labels <- list()
   leaf_count_labels <- character()
   for (entry in layout$nodes) {
     if (.is_leaf(entry$node)) {
-      leaf_mean_labels <- c(
-        leaf_mean_labels,
-        sprintf("%s = %.4f", mu_hat, entry$node$mean)
-      )
+      leaf_mean_labels[[length(leaf_mean_labels) + 1L]] <-
+        mean_label(entry$node$mean)
       leaf_count_labels <- c(
         leaf_count_labels,
         sprintf("N = %d", entry$node$n)
@@ -139,6 +151,12 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
   }
 
   text_dimensions <- function(label, cex, font = 1) {
+    if (!is.character(label)) {
+      return(c(
+        width = max(graphics::strwidth(label, cex = cex, font = font)),
+        height = max(graphics::strheight(label, cex = cex, font = font)) * 1.15
+      ))
+    }
     lines <- strsplit(label, "\n", fixed = TRUE)[[1L]]
     c(
       width = max(graphics::strwidth(lines, cex = cex, font = font)),
@@ -172,6 +190,17 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
     resolved_font_size <- as.numeric(font_size)
   }
   node_cex <- resolved_font_size / graphics::par("ps")
+  resolved_title_font_size <- if (is.null(title_font_size)) {
+    max(14, resolved_font_size + 2)
+  } else {
+    as.numeric(title_font_size)
+  }
+  if (!is.null(title)) {
+    graphics::title(
+      main = title,
+      cex.main = resolved_title_font_size / graphics::par("ps")
+    )
+  }
 
   for (entry in layout$nodes) {
     node <- entry$node
@@ -195,7 +224,7 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
                      col = if (positive) blue else white, border = "#444444",
                      lwd = 1.2)
       graphics::text(entry$x, entry$y + node_height * 0.18,
-                     sprintf("%s = %.4f", mu_hat, node$mean),
+                     mean_label(node$mean),
                      cex = node_cex, font = 2,
                      col = if (positive) "white" else "#111111")
       graphics::text(entry$x, entry$y - node_height * 0.18,
@@ -211,11 +240,11 @@ plot_cart_tree <- function(tree, feature_name = NULL, cut = 0.5,
 
   graphics::legend(
     "topright",
-    legend = c(sprintf("%s > %g (targeted)", mu_hat, cut),
-               sprintf("%s %s %g (not targeted)", mu_hat, less_equal, cut)),
+    legend = legend_labels,
     fill = c(blue, white), border = "#444444", cex = node_cex, bg = "white"
   )
   layout$font_size <- resolved_font_size
   layout$split_rule_lines <- split_rule_lines
+  layout$title_font_size <- resolved_title_font_size
   invisible(layout)
 }

@@ -41,9 +41,10 @@ positions.
   }
   \item{\code{print_tree()}}{Print the fitted tree.}
   \item{\code{plot(figsize = NULL, title = NULL, save_path = NULL,
-  font_size = NULL, split_rule_lines = 1, ...)}}{
+  font_size = NULL, split_rule_lines = 1, title_font_size = NULL, ...)}}{
     Display or save the fitted tree. When \code{font_size = NULL}, the largest
-    uniform font that fits every node is selected automatically.
+    uniform font that fits every node is selected automatically. Use
+    \code{title_font_size} to control the title independently.
   }
 }
 }

@@ -59,6 +59,7 @@ auto_layout <- plot_cart_tree(
   categorical$tree,
   feature_name = categorical$feature_name,
   cut = categorical$cut,
+  title = "Automatic title",
   save_path = auto_figure,
   split_rule_lines = 2
 )
@@ -69,7 +70,8 @@ manual_layout <- plot_cart_tree(
   cut = categorical$cut,
   save_path = manual_figure,
   font_size = 13,
-  split_rule_lines = 1
+  split_rule_lines = 1,
+  title_font_size = 17
 )
 bad_font <- try(
   plot_cart_tree(categorical$tree, save_path = tempfile(fileext = ".png"),
@@ -81,15 +83,23 @@ bad_lines <- try(
                  split_rule_lines = 3),
   silent = TRUE
 )
+bad_title_font <- try(
+  plot_cart_tree(categorical$tree, save_path = tempfile(fileext = ".png"),
+                 title_font_size = 0),
+  silent = TRUE
+)
 stopifnot(
   file.exists(auto_figure), file.info(auto_figure)$size > 0,
   file.exists(manual_figure), file.info(manual_figure)$size > 0,
   auto_layout$font_size >= 4, auto_layout$font_size <= 24,
+  auto_layout$title_font_size > auto_layout$font_size,
   auto_layout$split_rule_lines == 2L,
   manual_layout$font_size == 13,
+  manual_layout$title_font_size == 17,
   manual_layout$split_rule_lines == 1L,
   inherits(bad_font, "try-error"),
-  inherits(bad_lines, "try-error")
+  inherits(bad_lines, "try-error"),
+  inherits(bad_title_font, "try-error")
 )
 
 # Deterministic parity fixture generated from the Python reference package.

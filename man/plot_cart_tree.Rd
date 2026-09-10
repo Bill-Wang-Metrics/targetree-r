@@ -11,6 +11,7 @@ plot_cart_tree(
   save_path = NULL,
   font_size = NULL,
   split_rule_lines = 1,
+  title_font_size = NULL,
   ...
 )
 }
@@ -27,6 +28,9 @@ plot_cart_tree(
   \item{split_rule_lines}{Use \code{1} to display each internal-node rule on
   one line or \code{2} to put the feature name and condition on separate
   lines.}
+  \item{title_font_size}{Optional positive title font size in points. The
+  default, \code{NULL}, makes the title slightly larger than the resolved node
+  font.}
   \item{...}{Additional arguments passed to the graphics device when saving.}
 }
 \value{The computed tree layout, invisibly.}

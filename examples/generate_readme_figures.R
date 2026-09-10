@@ -16,6 +16,7 @@ fit_and_save <- function(x, y, predictors, dataset, method, cut, lbd = NULL) {
   model$plot(
     title = sprintf("%s: %s", dataset, toupper(method)),
     split_rule_lines = 2,
+    title_font_size = 18,
     save_path = file.path(
       figure_dir,
       sprintf("%s-%s.png", tolower(dataset), method)
