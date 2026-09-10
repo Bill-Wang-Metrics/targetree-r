@@ -4,7 +4,7 @@ figure_dir <- file.path("examples", "figures")
 dir.create(figure_dir, recursive = TRUE, showWarnings = FALSE)
 
 fit_and_save <- function(x, y, predictors, dataset, method, cut, lbd = NULL) {
-  model <- CART$new(
+  model <- targetree(
     depth = 3,
     minimum_portion = 0.02,
     method = method,

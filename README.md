@@ -20,7 +20,7 @@ Then load the package and open its documentation:
 ```r
 library(targetree)
 help(package = "targetree")
-?CART
+?targetree
 ```
 
 To update the package later, run:
@@ -53,7 +53,7 @@ predictors <- setdiff(names(diabetes), "Outcome")
 X <- diabetes[predictors]
 y <- diabetes$Outcome
 
-model <- CART$new(
+model <- targetree(
   depth = 3,
   minimum_portion = 0.02,
   method = "mdfs",
@@ -83,6 +83,9 @@ indicates which observations belong to terminal groups above `cut`.
 
 ## Methods
 
+Use the same `targetree()` constructor for all three algorithms and select the
+algorithm with the `method` argument:
+
 | `method` | Default `lbd` | Description |
 |---|---:|---|
 | `"cart"` | 0 | Standard CART splitting; the targeting threshold is applied after fitting |
@@ -90,6 +93,8 @@ indicates which observations belong to terminal groups above `cut`.
 | `"mdfs"` | 1 | A fully threshold-focused final split |
 
 For PFS, set `lbd` between 0 and 1. The examples below use `lbd = 0.5`.
+The older `CART$new()` constructor remains available so that existing scripts
+continue to run, but `targetree()` is the recommended interface.
 
 ## Worked examples
 
@@ -107,7 +112,7 @@ predictors <- setdiff(names(diabetes), "Outcome")
 X <- diabetes[predictors]
 y <- diabetes$Outcome
 
-diabetes_cart <- CART$new(
+diabetes_cart <- targetree(
   depth = 3, minimum_portion = 0.02,
   method = "cart", cut = 0.60,
   feature_name = predictors
@@ -119,7 +124,7 @@ diabetes_cart$plot(
   save_path = "diabetes-cart.pdf"
 )
 
-diabetes_mdfs <- CART$new(
+diabetes_mdfs <- targetree(
   depth = 3, minimum_portion = 0.02,
   method = "mdfs", cut = 0.60,
   feature_name = predictors
@@ -131,7 +136,7 @@ diabetes_mdfs$plot(
   save_path = "diabetes-mdfs.pdf"
 )
 
-diabetes_pfs <- CART$new(
+diabetes_pfs <- targetree(
   depth = 3, minimum_portion = 0.02,
   method = "pfs", lbd = 0.5, cut = 0.60,
   feature_name = predictors
@@ -173,7 +178,7 @@ predictors <- c("X", "Y", "FFMC", "DMC", "DC", "ISI",
 X <- forestfires[predictors]
 cut <- 1 / 3
 
-forestfires_cart <- CART$new(
+forestfires_cart <- targetree(
   depth = 3, minimum_portion = 0.02,
   method = "cart", cut = cut,
   feature_name = predictors
@@ -185,7 +190,7 @@ forestfires_cart$plot(
   save_path = "forestfires-cart.pdf"
 )
 
-forestfires_mdfs <- CART$new(
+forestfires_mdfs <- targetree(
   depth = 3, minimum_portion = 0.02,
   method = "mdfs", cut = cut,
   feature_name = predictors
@@ -197,7 +202,7 @@ forestfires_mdfs$plot(
   save_path = "forestfires-mdfs.pdf"
 )
 
-forestfires_pfs <- CART$new(
+forestfires_pfs <- targetree(
   depth = 3, minimum_portion = 0.02,
   method = "pfs", lbd = 0.5, cut = cut,
   feature_name = predictors
@@ -247,7 +252,7 @@ y <- as.integer(forestfires$area > 5)
 predictors <- setdiff(names(forestfires), "area")
 X <- forestfires[predictors]
 
-categorical_model <- CART$new(
+categorical_model <- targetree(
   depth = 3,
   minimum_portion = 0.02,
   method = "mdfs",
@@ -284,6 +289,6 @@ PNG, PDF, and SVG output without font-encoding warnings.
 
 ## Getting help
 
-Use `?CART` and `?plot_cart_tree` for the complete function documentation.
+Use `?targetree` and `?plot_cart_tree` for the complete function documentation.
 Questions and bug reports can be submitted through the repository's
 [Issues page](https://github.com/Bill-Wang-Metrics/targetree-r/issues).

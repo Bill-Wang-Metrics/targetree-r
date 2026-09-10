@@ -6,9 +6,28 @@ X <- matrix(rnorm(n * 2L), ncol = 2L)
 p <- plogis(rowSums(X))
 y <- rbinom(n, 1, p)
 
+constructor_model <- targetree(
+  depth = 1,
+  minimum_portion = 0.05,
+  method = "mdfs",
+  cut = 0.3
+)
+legacy_model <- CART$new(
+  depth = 1,
+  minimum_portion = 0.05,
+  method = "mdfs",
+  cut = 0.3
+)
+stopifnot(
+  inherits(constructor_model, "CART"),
+  inherits(legacy_model, "CART"),
+  grepl("<targetree: method=mdfs", capture.output(print(constructor_model))[1],
+        fixed = TRUE)
+)
+
 for (method in c("cart", "pfs", "mdfs")) {
   lbd <- if (method == "pfs") 0.5 else NULL
-  model <- CART$new(
+  model <- targetree(
     depth = 4,
     minimum_portion = 0.05,
     method = method,
@@ -25,7 +44,7 @@ for (method in c("cart", "pfs", "mdfs")) {
   )
 }
 
-honest <- CART$new(depth = 3, minimum_portion = 0.05, method = "cart")
+honest <- targetree(depth = 3, minimum_portion = 0.05, method = "cart")
 honest$fit(X[1:300, ], y[1:300])
 honest$honest_approach(X[301:500, ], y[301:500])
 stopifnot(length(honest$predict(X, honest = TRUE)) == n)
@@ -37,7 +56,7 @@ mixed <- data.frame(
 )
 mixed_p <- plogis(mixed$x + ifelse(mixed$category == "A", 1, -0.5))
 mixed_y <- rbinom(300, 1, mixed_p)
-categorical <- CART$new(
+categorical <- targetree(
   depth = 4,
   minimum_portion = 0.05,
   method = "mdfs",
@@ -46,8 +65,8 @@ categorical <- CART$new(
 categorical$fit(mixed, mixed_y)
 stopifnot(length(categorical$predict(mixed)) == 300L)
 
-bad_method <- try(CART$new(3, 0.05, method = "bogus"), silent = TRUE)
-bad_lambda <- try(CART$new(3, 0.05, method = "cart", lbd = 0.5), silent = TRUE)
+bad_method <- try(targetree(3, 0.05, method = "bogus"), silent = TRUE)
+bad_lambda <- try(targetree(3, 0.05, method = "cart", lbd = 0.5), silent = TRUE)
 stopifnot(inherits(bad_method, "try-error"), inherits(bad_lambda, "try-error"))
 
 figure <- tempfile(fileext = ".png")
@@ -126,7 +145,7 @@ X_parity <- cbind((i %% 17) / 16, ((i * 7) %% 23) / 22)
 p_parity <- plogis(-2.1 + 3.0 * X_parity[, 1] + 1.4 * X_parity[, 2])
 y_parity <- as.numeric((((i * 13) %% 101) / 100) < p_parity)
 
-cart_parity <- CART$new(
+cart_parity <- targetree(
   3, 0.09, method = "cart", cut = 0.35,
   feature_name = c("x1", "x2")
 )
@@ -138,7 +157,7 @@ stopifnot(
             c(41L, 1L, 30L, 8L))
 )
 
-mdfs_parity <- CART$new(3, 0.09, method = "mdfs", cut = 0.35)
+mdfs_parity <- targetree(3, 0.09, method = "mdfs", cut = 0.35)
 mdfs_parity$fit(X_parity, y_parity)
 stopifnot(
   isTRUE(all.equal(mdfs_parity$tree$threshold, 0.40625)),
@@ -148,7 +167,7 @@ stopifnot(
             c(41L, 1L, 30L, 8L))
 )
 
-prob_parity <- CART$new(3, 0.09, method = "pfs", lbd = 0.4, cut = 0.35)
+prob_parity <- targetree(3, 0.09, method = "pfs", lbd = 0.4, cut = 0.35)
 prob_parity$fit(X_parity, y_parity, p_parity)
 stopifnot(
   isTRUE(all.equal(prob_parity$tree$threshold, 0.46875)),
@@ -167,7 +186,7 @@ X_category_parity <- data.frame(
 y_category_parity <- as.numeric(
   (X_parity[, 1] + as.numeric(parity_categories %in% c("A", "C")) * 0.45) > 0.72
 )
-category_parity <- CART$new(
+category_parity <- targetree(
   3, 0.09, method = "mdfs", cut = 0.35,
   categorical_features = "category"
 )
@@ -185,7 +204,7 @@ diabetes_x <- diabetes[setdiff(names(diabetes), "Outcome")]
 diabetes_y <- diabetes$Outcome
 
 example_risk <- function(x, y, method, cut, lbd = NULL) {
-  model <- CART$new(
+  model <- targetree(
     depth = 3, minimum_portion = 0.02,
     method = method, lbd = lbd, cut = cut
   )

@@ -16,7 +16,8 @@ plot_cart_tree(
 )
 }
 \arguments{
-  \item{tree}{A tree stored in a fitted \code{CART} object's \code{$tree} field.}
+  \item{tree}{A tree stored in a fitted \code{targetree()} model's
+  \code{$tree} field.}
   \item{feature_name}{Optional feature names.}
   \item{cut}{Classification threshold.}
   \item{figsize}{Optional figure size in inches as \code{c(width, height)}.}
@@ -42,7 +43,7 @@ a legend indicating whether each leaf exceeds the selected threshold.
 set.seed(1)
 x <- matrix(rnorm(200), ncol = 2)
 y <- rbinom(100, 1, plogis(rowSums(x)))
-model <- CART$new(2, 0.05, method = "cart")
+model <- targetree(2, 0.05, method = "cart")
 model$fit(x, y)
 plot_cart_tree(model$tree, model$feature_name, model$cut,
                split_rule_lines = 2)

@@ -1,7 +1,7 @@
 Package: targetree
 Type: Package
 Title: Threshold-Focused Classification and Regression Trees
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: c(
     person("Lei Bill", "Wang", role = c("aut", "cre"),
            email = "Bill-Wang-Metrics@users.noreply.github.com"),

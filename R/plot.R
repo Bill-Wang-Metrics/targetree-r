@@ -27,7 +27,7 @@
 #' Draws internal split nodes, terminal-node probabilities and sample sizes,
 #' and a legend indicating whether each leaf exceeds the selected threshold.
 #'
-#' @param tree A tree stored in a fitted `CART` object's `$tree` field.
+#' @param tree A tree stored in a fitted `targetree()` model's `$tree` field.
 #' @param feature_name Optional feature names.
 #' @param cut Classification threshold.
 #' @param figsize Optional figure size in inches, `c(width, height)`.

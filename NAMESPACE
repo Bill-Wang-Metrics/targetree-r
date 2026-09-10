@@ -1,6 +1,7 @@
 export(CART)
 export(find_elements)
 export(plot_cart_tree)
+export(targetree)
 importFrom(R6,R6Class)
 importFrom(graphics,axis)
 importFrom(graphics,legend)
@@ -14,4 +15,3 @@ importFrom(grDevices,dev.off)
 importFrom(grDevices,pdf)
 importFrom(grDevices,png)
 importFrom(grDevices,svg)
-

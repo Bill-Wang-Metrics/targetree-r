@@ -1,8 +1,7 @@
-#' Threshold-focused classification and regression tree
+#' Underlying targetree R6 class
 #'
-#' An R6 implementation of CART with Penalized Final Split (PFS) and Maximum
-#' Distance Final Split (MDFS) criteria. The implementation follows the Python
-#' `targetree` reference algorithm.
+#' The underlying R6 implementation used by `targetree()`. New code should use
+#' `targetree()`; `CART$new()` remains available for backward compatibility.
 #'
 #' @section Construction:
 #' `model <- CART$new(depth, minimum_portion, lbd = NULL, cut = 0.5,
@@ -166,7 +165,7 @@ CART <- R6::R6Class(
     },
 
     print = function(...) {
-      cat(sprintf("<targetree CART: method=%s, depth=%d, cut=%g>\n",
+      cat(sprintf("<targetree: method=%s, depth=%d, cut=%g>\n",
                   self$method, self$depth, self$cut))
       if (!is.null(self$tree)) self$print_tree()
       invisible(self)

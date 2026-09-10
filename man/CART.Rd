@@ -1,10 +1,10 @@
 \name{CART}
 \alias{CART}
-\title{Threshold-Focused Classification and Regression Tree}
+\title{Underlying Targetree R6 Class}
 \description{
-An R6 implementation of CART with Penalized Final Split (PFS) and Maximum
-Distance Final Split (MDFS) criteria. The implementation follows the Python
-\code{targetree} reference algorithm.
+The underlying R6 implementation used by \code{targetree()}. New code should
+use \code{targetree()}; \code{CART$new()} remains available for backward
+compatibility.
 }
 \section{Construction}{
 \preformatted{

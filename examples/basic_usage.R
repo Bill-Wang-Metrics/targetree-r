@@ -6,10 +6,10 @@ X <- matrix(rnorm(n * 2), ncol = 2)
 p <- plogis(rowSums(X))
 y <- rbinom(n, 1, p)
 
-cart <- CART$new(depth = 4, minimum_portion = 0.05, method = "cart")
+cart <- targetree(depth = 4, minimum_portion = 0.05, method = "cart")
 cart$fit(X, y)
 
-mdfs <- CART$new(
+mdfs <- targetree(
   depth = 4,
   minimum_portion = 0.05,
   method = "mdfs",
@@ -21,4 +21,3 @@ print(cart$get_risk(X, y))
 print(mdfs$get_risk(X, y))
 
 mdfs$plot(title = "MDFS tree", save_path = "mdfs_tree.png")
-
